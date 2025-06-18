@@ -718,7 +718,7 @@ def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_wo
     stellar_blade_bones_flip = {
         "Ab-L-AX1", "Ab-L-AX2", "Ab-L-BrochiUp", "Ab-L-Cloth-JacketA-00", "Ab-L-Side-LegAct",
         "Ab-L-Venter", "Ab-L-Venter_0", "Ab-R-AX1", "Ab-R-AX2", "Ab-R-BackClothes",
-        "Ab-R-Bk-ClavicleAct", "Ab-R-Breast-String1", "Ab-R-Breast_String1", "Ab-R-BrochiUp", "Ab-R-Breast",
+        "Ab-R-Bk-ClavicleAct", "Ab-R-Breast-String1", "Ab-R-Breast_String1", "Ab-R-BrochiUp",
         "Ab-R-Deltoid", "Ab-R-Deltoid-BackStringA1", "Ab-R-Deltoid-BackStringB1",
         "Ab-R-Deltoid-Fr-String01", "Ab_R_Fr_BreastStringRoot", "Ab-R-Fr-ClavicleAct",
         "Ab-R-Venter", "Ab-Fr-Spine2StingA-01", "Ab_09Gear_L0", "Ab_CapeBKR01",
