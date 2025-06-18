@@ -717,10 +717,11 @@ import json
 
 def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_world_arm=None, bones=[]):
 
-    ver = str(bpy.app.version_string).split(".")
-    verstring = ver[0]+"."+ver[1]
-    skeleton_json = json.load(open(f"./{verstring}/scripts/addons_core/io_scene_fbx/sb-json/CH_P_EVE_01_Skeleton.json", "r"))
+    blender_path = os.path.dirname(os.path.realpath(__file__))
+    skeleton_path = os.path.join(blender_path, "sb-json", "CH_P_EVE_01_Skeleton.json")
 
+    with open(skeleton_path, "r") as f:
+        skeleton_json = json.load(f)
 
     if arm_obj is None:
         arm_obj = me_obj
