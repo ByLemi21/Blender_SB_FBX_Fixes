@@ -760,13 +760,15 @@ def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_wo
     for bo_obj in bones:
         bomat = bo_obj.fbx_object_matrix(scene_data, rest=True, global_space=True)
         
-        if bo_obj.name in stellar_blade_bones_flip:
-            # Create scale matrix
-            scale_mat = Matrix()
-            scale_mat[0][0] = -1
-            scale_mat[1][1] = -1
-            scale_mat[2][2] = -1
-            bomat = bomat @ scale_mat
+        if bpy.context.scene.sb_flipbones is True:
+            if bo_obj.name in stellar_blade_bones_flip:
+                # Create scale matrix
+                scale_mat = Matrix()
+                scale_mat[0][0] = -1
+                scale_mat[1][1] = -1
+                scale_mat[2][2] = -1
+                bomat = bomat @ scale_mat
+                print("Stellar Blade - Bones Flipped")
             
         mat_world_bones[bo_obj] = bomat
         fbx_posenode = elem_empty(fbx_pose, b"PoseNode")

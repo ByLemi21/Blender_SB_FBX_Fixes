@@ -43,6 +43,7 @@ from bpy_extras.io_utils import (
     poll_file_object_drop,
 )
 
+bpy.types.Scene.sb_flipbones = bpy.props.BoolProperty(name="Flip Inverted Bones", default=False)
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 class ImportFBX(bpy.types.Operator, ImportHelper):
@@ -565,7 +566,7 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
         is_file_browser = context.space_data.type == 'FILE_BROWSER'
 
         export_main(layout, self, is_file_browser)
-        layout.label(text="Stellar Blade FBX Fix (byLemi21) v0.1")
+        export_panel_stellarblade(layout, context.scene)
         export_panel_include(layout, self, is_file_browser)
         export_panel_transform(layout, self)
         export_panel_geometry(layout, self)
@@ -640,6 +641,14 @@ def export_panel_transform(layout, operator):
         row = body.row()
         row.prop(operator, "bake_space_transform")
         row.label(text="", icon='ERROR')
+
+
+def export_panel_stellarblade(layout, operator):
+    header, body = layout.panel("FBX_export_stellarblade", default_closed=False)
+    header.label(text="Stellar Blade")
+    if body:
+        body.prop(operator, "sb_flipbones")
+        body.label(text="Stellar Blade FBX Fix (byLemi21) v0.2")
 
 
 def export_panel_geometry(layout, operator):
