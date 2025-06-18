@@ -556,6 +556,12 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
         options={'HIDDEN'},
     )
 
+    stellar_blade_fix: BoolProperty(
+        name="Inverted Bones Fix",
+        description="Export with bone inversions needed by Stellar Blade (by Lami21)",
+        default=False,
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -565,12 +571,12 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
         is_file_browser = context.space_data.type == 'FILE_BROWSER'
 
         export_main(layout, self, is_file_browser)
-        layout.label(text="Stellar Blade FBX Fix (byLemi21) v0.1")
         export_panel_include(layout, self, is_file_browser)
         export_panel_transform(layout, self)
         export_panel_geometry(layout, self)
         export_panel_armature(layout, self)
         export_panel_animation(layout, self)
+        export_panel_stellar_blade(layout, self)
 
     @property
     def check_extension(self):
@@ -671,6 +677,7 @@ def export_panel_armature(layout, operator):
         body.prop(operator, "use_armature_deform_only")
         body.prop(operator, "add_leaf_bones")
 
+        
 
 def export_panel_animation(layout, operator):
     header, body = layout.panel("FBX_export_bake_animation", default_closed=True)
@@ -686,6 +693,12 @@ def export_panel_animation(layout, operator):
         body.prop(operator, "bake_anim_step")
         body.prop(operator, "bake_anim_simplify_factor")
 
+def export_panel_stellar_blade(layout, operator):
+    header, body = layout.panel("FBX_export_stellarblade", default_closed=False)
+    header.label(text="StellarBlade")
+    if body:
+        body.label(text="Stellar Blade FBX Fix (byLemi21) v0.2")
+        body.prop(operator, "stellar_blade_fix")
 
 class IO_FH_fbx(bpy.types.FileHandler):
     bl_idname = "IO_FH_fbx"
