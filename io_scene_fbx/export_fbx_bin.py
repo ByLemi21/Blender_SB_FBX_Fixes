@@ -774,7 +774,7 @@ def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_wo
 
         was_flipped = False
         
-        if should_flip:
+        if should_flip and scene_data.settings.stellar_blade_fix:
             # Apply negative scaling to parent bones
             print(f"        Flipping {bo_obj.name}...")
             scale_mat = Matrix()
@@ -783,6 +783,9 @@ def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_wo
             scale_mat[2][2] = -1
             bomat = bomat @ scale_mat
             was_flipped = True
+        
+        if should_flip and not scene_data.settings.stellar_blade_fix:
+            print(f"        Skipping flip of {bo_obj.name} (setting not active)...")
 
         if was_flipped:
             # mark self as not inverted anymore
