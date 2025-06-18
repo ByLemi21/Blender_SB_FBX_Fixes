@@ -760,15 +760,13 @@ def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_wo
     for bo_obj in bones:
         bomat = bo_obj.fbx_object_matrix(scene_data, rest=True, global_space=True)
         
-        if bpy.context.scene.sb_flipbones is True:
-            if bo_obj.name in stellar_blade_bones_flip:
-                # Create scale matrix
-                scale_mat = Matrix()
-                scale_mat[0][0] = -1
-                scale_mat[1][1] = -1
-                scale_mat[2][2] = -1
-                bomat = bomat @ scale_mat
-                print("Stellar Blade - Bones Flipped")
+        if scene_data.settings.stellar_blade_fix and bo_obj.name in stellar_blade_bones_flip:
+            # Create scale matrix
+            scale_mat = Matrix()
+            scale_mat[0][0] = -1
+            scale_mat[1][1] = -1
+            scale_mat[2][2] = -1
+            bomat = bomat @ scale_mat
             
         mat_world_bones[bo_obj] = bomat
         fbx_posenode = elem_empty(fbx_pose, b"PoseNode")
@@ -778,7 +776,7 @@ def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_wo
     return mat_world_obj, mat_world_bones
 
 
-def fbx_data_mesh_shapes_elements(root, me_obj, me, scene_data, fbx_me_tmpl, fbx_me_props):
+def fbx_data_mesh_shapes_elements(root, me_obj, me, scene_data, fbx_me_tmpl, fbx_me_props, stellar_balde_fix=False):
     """
     Write shape keys related data.
     """
@@ -3461,6 +3459,7 @@ def save_single(operator, scene, depsgraph, filepath="",
                 armature_nodetype='NULL',
                 colors_type='SRGB',
                 prioritize_active_color=False,
+                stellar_blade_fix=False,
                 **kwargs
                 ):
 
@@ -3527,7 +3526,7 @@ def save_single(operator, scene, depsgraph, filepath="",
         add_leaf_bones, bone_correction_matrix, bone_correction_matrix_inv,
         bake_anim, bake_anim_use_all_bones, bake_anim_use_nla_strips, bake_anim_use_all_actions,
         bake_anim_step, bake_anim_simplify_factor, bake_anim_force_startend_keying,
-        False, media_settings, use_custom_props, colors_type, prioritize_active_color
+        False, media_settings, use_custom_props, colors_type, prioritize_active_color,stellar_blade_fix 
     )
 
     import bpy_extras.io_utils
