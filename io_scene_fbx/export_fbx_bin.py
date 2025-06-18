@@ -713,23 +713,14 @@ def fbx_data_camera_elements(root, cam_obj, scene_data):
     elem_data_vec_float64(cam, b"AudioColor", (0.0, 1.0, 0.0))
     elem_data_single_float64(cam, b"CameraOrthoZoom", 1.0)
 
+import json
 
 def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_world_arm=None, bones=[]):
-    stellar_blade_bones_flip = {
-        "Ab-L-AX1", "Ab-L-AX2", "Ab-L-BrochiUp", "Ab-L-Cloth-JacketA-00", "Ab-L-Side-LegAct",
-        "Ab-L-Venter", "Ab-L-Venter_0", "Ab-R-AX1", "Ab-R-AX2", "Ab-R-BackClothes",
-        "Ab-R-Bk-ClavicleAct", "Ab-R-Breast-String1", "Ab-R-Breast_String1", "Ab-R-BrochiUp",
-        "Ab-R-Deltoid", "Ab-R-Deltoid-BackStringA1", "Ab-R-Deltoid-BackStringB1",
-        "Ab-R-Deltoid-Fr-String01", "Ab_R_Fr_BreastStringRoot", "Ab-R-Fr-ClavicleAct",
-        "Ab-R-Venter", "Ab-Fr-Spine2StingA-01", "Ab_09Gear_L0", "Ab_CapeBKR01",
-        "Bip001-L-Toe0Nub", "Bip001-R-Finger0Nub", "Bip001-R-Finger1Nub",
-        "Bip001-R-Finger2Nub", "Bip001-R-Finger3Nub", "Bip001-R-Finger4Nub",
-        "Dm-R-Ax01", "Dm-R-AX2", "Dm-R-AX2-Expose", "Dm-R-Breast-ArmCons",
-        "Dm-R-Breast-Point", "Dm-R-Elbow-Expose", "Dm-R-Forearm-Tw-Expose",
-        "Dm-R-Knee-Expose", "Dm-R-Pectro", "Dm-R-PectroDn", "Dm-R-Pectro-Cnt",
-        "Dm-R-Pectro1", "Dm-R-Shoulder", "Dm-R-Shoulder-Point", "Dm-R-Thigh-Tw-Expose",
-        "Dm-R-Trape", "Dm-R-Trape-Point", "Eve01-R-AX2T", "Eve01-L-AX2T"
-    }
+
+    ver = str(bpy.app.version_string).split(".")
+    verstring = ver[0]+"."+ver[1]
+    skeleton_json = json.load(open(f"./{verstring}/scripts/addons_core/io_scene_fbx/sb-json/CH_P_EVE_01_Skeleton.json", "r"))
+
 
     if arm_obj is None:
         arm_obj = me_obj
@@ -757,21 +748,58 @@ def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_wo
     
     # Process all bones
     mat_world_bones = {}
+
+    # holds information about the invisible flips that happend when flipping a parent bone
+    bones_actually_flipped = {} 
+
     for bo_obj in bones:
         bomat = bo_obj.fbx_object_matrix(scene_data, rest=True, global_space=True)
+
+        should_flip = False
+
+        if bo_obj.name in skeleton_json[-1]["ReferenceSkeleton"]["FinalNameToIndexMap"]:
+            loc, rot, scale = bomat.decompose()
+            bone_json = skeleton_json[-1]["ReferenceSkeleton"]["FinalRefBonePose"][skeleton_json[-1]["ReferenceSkeleton"]["FinalNameToIndexMap"][bo_obj.name]]
+            scaleShould = np.array([bone_json["Scale3D"]["X"],bone_json["Scale3D"]["Y"],bone_json["Scale3D"]["Z"]])
+            # needs to be inverted again if there is an invisible  flip happening because this bones parent was flipped
+            scaleIs = np.array([scale.x, scale.y, scale.z]) * (-1 if (bo_obj in bones_actually_flipped.keys() and bones_actually_flipped[bo_obj]) else 1)
+            dif_mag = np.linalg.norm(scaleShould-scaleIs)
+            if dif_mag > 0.1:
+                should_flip = True
+                print(bo_obj.name)
+                if bo_obj in bones_actually_flipped.keys() and bones_actually_flipped[bo_obj]:
+                    print(f"    This bone was parent-flipped")
+                print(f"    Scale should {scaleShould}")
+                print(f"    Scale is {scaleIs}")
+                print(f"    Difference Magnitude {dif_mag}")
+
+        was_flipped = False
         
-        if scene_data.settings.stellar_blade_fix and bo_obj.name in stellar_blade_bones_flip:
-            # Create scale matrix
+        if should_flip:
+            # Apply negative scaling to parent bones
+            print(f"        Flipping {bo_obj.name}...")
             scale_mat = Matrix()
             scale_mat[0][0] = -1
             scale_mat[1][1] = -1
             scale_mat[2][2] = -1
             bomat = bomat @ scale_mat
-            
+            was_flipped = True
+
+        if was_flipped:
+            # mark self as not inverted anymore
+            bones_actually_flipped[bo_obj] = False
+
+            # look for direct child and not mark it as inversed
+            for bo in bones:
+                if hasattr(bo, 'bdata') and bo.bdata.parent and bo.bdata.parent.name == bo_obj.name:
+                    bones_actually_flipped[bo] = True
+        
         mat_world_bones[bo_obj] = bomat
         fbx_posenode = elem_empty(fbx_pose, b"PoseNode")
         elem_data_single_int64(fbx_posenode, b"Node", bo_obj.fbx_uuid)
         elem_data_single_float64_array(fbx_posenode, b"Matrix", matrix4_to_array(bomat))
+
+    print("======================")
 
     return mat_world_obj, mat_world_bones
 
