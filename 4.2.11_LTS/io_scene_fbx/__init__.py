@@ -561,6 +561,15 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
         default=False,
     )
 
+    stellar_blade_skeleton: EnumProperty(
+        name="Skeleton File",
+        items=(
+            ("EVE", "EVE", "Match with EVE's skeleton file (CH_P_EVE_01_Skeleton)"),
+            ("LILY", "Lily",  "Match with Lily's skeleton file (CH_NPC_01_Skeleton)")
+            ),
+        description="Decides which skeleton file to match with for the bone flipping."
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -697,6 +706,7 @@ def export_panel_stellar_blade(layout, operator):
     if body:
         body.label(text="Stellar Blade FBX Fix (byLemi21) v0.2")
         body.prop(operator, "stellar_blade_fix")
+        body.prop(operator, "stellar_blade_skeleton")
         
 
 class IO_FH_fbx(bpy.types.FileHandler):
