@@ -558,7 +558,7 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
 
     stellar_blade_fix: BoolProperty(
         name="Inverted Bones Fix",
-        description="Export with bone inversions needed by Stellar Blade (by Lami21)",
+        description="Export with bone inversions needed by Stellar Blade (by Lami21 and Njaecha)",
         default=False,
     )
 
@@ -706,7 +706,7 @@ def export_panel_stellar_blade(layout, operator):
     header, body = layout.panel("FBX_export_stellarblade", default_closed=False)
     header.label(text="StellarBlade")
     if body:
-        body.label(text="Stellar Blade FBX Fix (byLemi21) v0.2")
+        body.label(text="Stellar Blade FBX Fix (by Lemi21 and Njaecha) v0.3")
         body.prop(operator, "stellar_blade_fix")
         body.prop(operator, "stellar_blade_skeleton")
 
