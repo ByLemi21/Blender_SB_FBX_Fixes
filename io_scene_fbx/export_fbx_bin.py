@@ -717,8 +717,16 @@ import json
 
 def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_world_arm=None, bones=[]):
 
+    skeleton_file = "CH_P_EVE_01_Skeleton.json"
+    if scene_data.settings.stellar_blade_skeleton == "EVE":
+        skeleton_file = "CH_P_EVE_01_Skeleton.json" # default case
+    elif scene_data.settings.stellar_blade_skeleton == "LILY":
+        skeleton_file = "CH_NPC_01_Skeleton.json"
+
     blender_path = os.path.dirname(os.path.realpath(__file__))
-    skeleton_path = os.path.join(blender_path, "sb-json", "CH_P_EVE_01_Skeleton.json")
+    skeleton_path = os.path.join(blender_path, "sb-json", skeleton_file)
+
+    print(f"[Stellar Blade Bonefix] Using skeleton file: {skeleton_path}")
 
     with open(skeleton_path, "r") as f:
         skeleton_json = json.load(f)
@@ -764,15 +772,15 @@ def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, mat_wo
             scaleShould = np.array([bone_json["Scale3D"]["X"],bone_json["Scale3D"]["Y"],bone_json["Scale3D"]["Z"]])
             # needs to be inverted again if there is an invisible  flip happening because this bones parent was flipped
             scaleIs = np.array([scale.x, scale.y, scale.z]) * (-1 if (bo_obj in bones_actually_flipped.keys() and bones_actually_flipped[bo_obj]) else 1)
-            dif_mag = np.linalg.norm(scaleShould-scaleIs)
-            if dif_mag > 0.1:
+            
+            if np.dot(scaleShould, scaleIs) < 0: # use dot product to check if vectors are oriented in opposite directions
                 should_flip = True
                 print(bo_obj.name)
                 if bo_obj in bones_actually_flipped.keys() and bones_actually_flipped[bo_obj]:
                     print(f"    This bone was parent-flipped")
                 print(f"    Scale should {scaleShould}")
                 print(f"    Scale is {scaleIs}")
-                print(f"    Difference Magnitude {dif_mag}")
+                print(f"    Dot Product {np.dot(scaleShould, scaleIs)}")
 
         was_flipped = False
         
@@ -3492,6 +3500,7 @@ def save_single(operator, scene, depsgraph, filepath="",
                 colors_type='SRGB',
                 prioritize_active_color=False,
                 stellar_blade_fix=False,
+                stellar_blade_skeleton="EVE",
                 **kwargs
                 ):
 
@@ -3558,7 +3567,7 @@ def save_single(operator, scene, depsgraph, filepath="",
         add_leaf_bones, bone_correction_matrix, bone_correction_matrix_inv,
         bake_anim, bake_anim_use_all_bones, bake_anim_use_nla_strips, bake_anim_use_all_actions,
         bake_anim_step, bake_anim_simplify_factor, bake_anim_force_startend_keying,
-        False, media_settings, use_custom_props, colors_type, prioritize_active_color,stellar_blade_fix 
+        False, media_settings, use_custom_props, colors_type, prioritize_active_color,stellar_blade_fix,stellar_blade_skeleton
     )
 
     import bpy_extras.io_utils
