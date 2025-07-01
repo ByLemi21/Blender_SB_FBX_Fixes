@@ -27,6 +27,7 @@ if "bpy" in locals():
 
 
 import bpy
+import os
 from bpy.props import (
     StringProperty,
     BoolProperty,
@@ -285,6 +286,64 @@ def import_panel_armature(layout, operator):
         sub.prop(operator, "primary_bone_axis")
         sub.prop(operator, "secondary_bone_axis")
 
+
+# Export Shit ===================================================================================
+
+
+
+def get_stellar_blade_json_list(self, context):
+    items = []
+
+    # Get the path to the folder where the script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    json_dir = os.path.join(script_dir, "sb-json")
+
+    if not os.path.isdir(json_dir):
+        return [("NONE", "No .json folder", "", 0)]
+
+    try:
+        json_files = [f for f in os.listdir(json_dir) if f.lower().endswith(".json")]
+        if not json_files:
+            return [("NONE", "No .json files found", "", 0)]
+
+        preferred_file = "CH_P_EVE_01_Skeleton.json"
+        sorted_files = []
+
+        if preferred_file in json_files:
+            sorted_files.append(preferred_file)
+            json_files.remove(preferred_file)
+
+        sorted_files += sorted(json_files)
+
+        for i, filename in enumerate(sorted_files):
+            name = os.path.splitext(filename)[0]
+            items.append((name, name, f"Skeleton file: {filename}", i))
+
+    except Exception as e:
+        items = [("ERROR", f"Error reading folder: {e}", "", 0)]
+
+    return items
+
+class OT_OpenStellarBladeFolder(bpy.types.Operator):
+    bl_idname = "wm.open_stellarblade_folder"
+    bl_label = "Show in Explorer"
+    bl_description = "Open the folder containing Stellar Blade skeleton .json files"
+
+    def execute(self, context):
+        json_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sb-json")
+
+        if not os.path.isdir(json_dir):
+            self.report({'ERROR'}, "Folder 'sb-json' not found.")
+            return {'CANCELLED'}
+
+        try:
+            # Try Windows-style opening first
+            os.startfile(json_dir)
+            return {'FINISHED'}
+        except AttributeError:
+            # os.startfile not available (e.g., Linux, macOS)
+            self.report({'ERROR'}, "Opening folders is only supported on Windows.")
+            return {'CANCELLED'}
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 class ExportFBX(bpy.types.Operator, ExportHelper):
@@ -564,12 +623,10 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
 
     stellar_blade_skeleton: EnumProperty(
         name="Skeleton File",
-        items=(
-            ("EVE", "EVE", "Match with EVE's skeleton file (CH_P_EVE_01_Skeleton)"),
-            ("LILY", "Lily",  "Match with Lily's skeleton file (CH_NPC_01_Skeleton)")
-            ),
-        description="Decides which skeleton file to match with for the bone flipping."
+        description="Choose a .json skeleton file from the sb-json folder",
+        items=get_stellar_blade_json_list
     )
+
 
     def draw(self, context):
         layout = self.layout
@@ -580,12 +637,12 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
         is_file_browser = context.space_data.type == 'FILE_BROWSER'
 
         export_main(layout, self, is_file_browser)
+        export_panel_stellar_blade(layout, self)
         export_panel_include(layout, self, is_file_browser)
         export_panel_transform(layout, self)
         export_panel_geometry(layout, self)
         export_panel_armature(layout, self)
         export_panel_animation(layout, self)
-        export_panel_stellar_blade(layout, self)
 
     @property
     def check_extension(self):
@@ -702,13 +759,39 @@ def export_panel_animation(layout, operator):
         body.prop(operator, "bake_anim_step")
         body.prop(operator, "bake_anim_simplify_factor")
 
+
 def export_panel_stellar_blade(layout, operator):
     header, body = layout.panel("FBX_export_stellarblade", default_closed=False)
-    header.label(text="StellarBlade")
+    header.label(text="StellarBlade (v0.4)")
+
     if body:
-        body.label(text="Stellar Blade FBX Fix (by Lemi21 and Njaecha) v0.3")
-        body.prop(operator, "stellar_blade_fix")
-        body.prop(operator, "stellar_blade_skeleton")
+        json_items = get_stellar_blade_json_list(operator, bpy.context)
+        has_valid_json = json_items and not json_items[0][0] in {"NONE", "ERROR"}
+
+        if not has_valid_json:
+            row = body.row()
+            row.enabled = False
+            row.prop(operator, "stellar_blade_fix")
+            row = body.row()
+            row.alert = True
+            row.label(text="No .json skeleton files found.", icon='ERROR')
+            row.alert = False
+            row = body.row()
+            row.enabled = False
+            row.prop(operator, "stellar_blade_skeleton")    
+        else:
+            body.prop(operator, "stellar_blade_fix")
+
+            row = body.row(align=True)
+            row.prop(operator, "stellar_blade_skeleton", text='.json File')
+            row.operator("wm.open_stellarblade_folder", text="", icon="FILE_FOLDER")
+
+            #Known Files
+            if operator.stellar_blade_skeleton == 'CH_P_EVE_01_Skeleton': body.label(text="Eve's Skeleton (CH_P_EVE_01_Skeleton)", icon='OUTLINER_OB_ARMATURE')
+            elif operator.stellar_blade_skeleton == 'CH_NPC_01_Skeleton': body.label(text="Lily's Skeleton (CH_NPC_01_Skeleton)", icon='OUTLINER_OB_ARMATURE')
+
+        body.separator()
+        body.label(text="Stellar Blade FBX Fix (by Lemi21 and Njaecha)")  
 
 class IO_FH_fbx(bpy.types.FileHandler):
     bl_idname = "IO_FH_fbx"
@@ -734,6 +817,7 @@ classes = (
     ImportFBX,
     ExportFBX,
     IO_FH_fbx,
+    OT_OpenStellarBladeFolder,
 )
 
 
