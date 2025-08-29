@@ -10,7 +10,7 @@ from collections import namedtuple
 from collections.abc import Iterable
 from itertools import zip_longest, chain
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Callable, Any
 import numpy as np
 
 import bpy
@@ -341,7 +341,7 @@ def _mat4_vec3_array_multiply(mat4, vec3_array, dtype=None, return_4d=False):
     # For a single column vector:
     # ┌a, b, c, d┐   ┌x┐   ┌ax+by+cz+d┐
     # │e, f, g, h│ @ │y│ = │ex+fy+gz+h│
-    # │i, j, k, l│   │z│   │ix+jy+kz+l│
+    # │i, j, k, l│   │z┘   │ix+jy+kz+l│
     # └m, n, o, p┘   └1┘   └mx+ny+oz+p┘
     # ┌a, b, c┐   ┌x┐   ┌d┐   ┌ax+by+cz┐   ┌d┐   ┌ax+by+cz+d┐
     # │e, f, g│ @ │y│ + │h│ = │ex+fy+gz│ + │h│ = │ex+fy+gz+h│
@@ -720,7 +720,7 @@ class AttributeDescription:
     domain: str
     # Some attributes are required to exist if certain conditions are met. If a required attribute does not exist when
     # attempting to get it, an AssertionError is raised.
-    is_required_check: Callable[[bpy.types.AttributeGroup], bool] = None
+    is_required_check: Callable[[Any], bool] = None
     # NumPy dtype that matches the internal C data of this attribute.
     dtype: np.dtype = field(init=False)
     # The default attribute name to use with foreach_get and foreach_set.
@@ -1411,6 +1411,7 @@ class AnimationCurveNodeWrapper:
             #   [F, F, T, F, F, T, T, T]
             # `p_enabled_diff_to_check_idx`:
             #   [      2,       5, 6, 7]
+
             # `p_enabled_idx_in_sampled_values_to_check`:
             #   [      2,       5, 5, 5]
             p_enabled_idx_in_sampled_values_to_check = p_enabled_idx_in_sampled_values[p_enabled_diff_to_check_idx]
@@ -1435,14 +1436,6 @@ class AnimationCurveNodeWrapper:
             #   [2, 5, 5, 5]
             # Let `enough_diff_p_enabled_val_mask` be:
             #   [F, F, T, T]
-            # The first index that is newly enabled is 6:
-            #   [2, 5,>6<,5]
-            # But 6 > 5, so the next value's nearest previous enabled index is also affected:
-            #   [2, 5, 6,>6<]
-            # We had calculated a newly enabled index of 7 too, but that was calculated against the old nearest previous
-            # enabled index of 5, which has now been updated to 6, so whether 7 is enabled or not needs to be
-            # recalculated:
-            #   [F, F, T, ?]
             if np.any(enough_diff_p_enabled_val_mask):
                 # Accessing .data, the memoryview of the array, iteratively or by individual index is faster than doing
                 # the same with the array itself.
