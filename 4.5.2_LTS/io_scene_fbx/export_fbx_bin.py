@@ -3567,10 +3567,6 @@ def save_single(operator, scene, depsgraph, filepath="",
     print('\nFBX export starting... %r' % filepath)
     start_time = time.process_time()
 
-    # Ensure Stellar Blade bone fix logic is included in timing
-    # (EVE/LILY inverted bone fix is handled in fbx_data_bindpose_element via fbx_data_from_scene)
-    # If any additional fix logic is needed, add it here before timing ends.
-
     # Generate some data about exported scene...
     scene_data = fbx_data_from_scene(scene, depsgraph, settings)
 
